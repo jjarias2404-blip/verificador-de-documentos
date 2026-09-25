@@ -1,324 +1,335 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" data-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard & Verificador de Operaciones - Remisiones Urea</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+    <title>Verificador y Control de Urea - Dashboard</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        navy: {
+                            50: '#f0f4f9',
+                            100: '#d9e2ec',
+                            500: '#1b365d',
+                            700: '#0f2342',
+                            900: '#081426',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- FontAwesome icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        :root {
-            --primary-navy: #1F4E78;
-            --secondary-blue: #2F5597;
-            --bg-light: #F4F6F9;
+        /* Definición de los 3 Temas */
+        
+        /* 1. Modo Oscuro (Dark Theme) */
+        [data-theme="dark"] {
+            --bg-main: #0f172a;
+            --bg-card: #1e293b;
+            --bg-header: #1e293b;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --border-color: #334155;
+            --accent: #38bdf8;
+            --accent-hover: #0284c7;
+            --btn-bg: #334155;
+            --table-hover: #334155;
+            --badge-bg: #1e3a8a;
+            --badge-text: #93c5fd;
         }
-        body { background-color: var(--bg-light); font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        .navbar-custom { background-color: var(--primary-navy); }
-        .card-custom { border-radius: 12px; border: none; box-shadow: 0 4px 12px rgba(0,0,0,0.06); }
-        .stat-card { background: white; border-left: 5px solid var(--primary-navy); border-radius: 8px; padding: 18px; }
-        .drop-zone {
-            border: 2px dashed var(--primary-navy);
-            border-radius: 12px;
-            background-color: #ffffff;
-            padding: 30px;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.3s ease;
+
+        /* 2. Modo Claro (Light Theme) */
+        [data-theme="light"] {
+            --bg-main: #f8fafc;
+            --bg-card: #ffffff;
+            --bg-header: #ffffff;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --border-color: #e2e8f0;
+            --accent: #2563eb;
+            --accent-hover: #1d4ed8;
+            --btn-bg: #f1f5f9;
+            --table-hover: #f8fafc;
+            --badge-bg: #dbeafe;
+            --badge-text: #1e40af;
         }
-        .drop-zone:hover, .drop-zone.dragover { background-color: #e8f1f8; border-color: #11324d; }
-        .badge-exact { background-color: #dc3545; color: white; font-weight: 600; }
-        .badge-similar { background-color: #ffc107; color: #212529; font-weight: 600; }
-        .badge-ok { background-color: #198754; color: white; font-weight: 600; }
-        .table-responsive { max-height: 500px; overflow-y: auto; }
-        .nav-tabs .nav-link.active { font-weight: bold; color: var(--primary-navy); border-bottom: 3px solid var(--primary-navy); }
+
+        /* 3. Modo Azul Corporativo (Navy / Blue Theme) */
+        [data-theme="blue"] {
+            --bg-main: #0a192f;
+            --bg-card: #112240;
+            --bg-header: #112240;
+            --text-main: #e6f1ff;
+            --text-muted: #8892b0;
+            --border-color: #233554;
+            --accent: #64ffda;
+            --accent-hover: #4cd6b3;
+            --btn-bg: #233554;
+            --table-hover: #1d2d50;
+            --badge-bg: #172a45;
+            --badge-text: #64ffda;
+        }
+
+        body {
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        .bg-card { background-color: var(--bg-card); transition: background-color 0.3s ease; }
+        .bg-header { background-color: var(--bg-header); transition: background-color 0.3s ease; }
+        .border-custom { border-color: var(--border-color); }
+        .text-muted { color: var(--text-muted); }
+        .accent-color { color: var(--accent); }
+        .bg-accent { background-color: var(--accent); }
+        .table-row-hover:hover { background-color: var(--table-hover); }
+
+        /* Estilo del botón de menú desplegable de temas */
+        .theme-dropdown {
+            position: relative;
+            display: inline-block;
+        }
+        .theme-menu {
+            display: none;
+            position: absolute;
+            right: 0;
+            top: 110%;
+            width: 180px;
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 0.5rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+            z-index: 50;
+        }
+        .theme-menu.show {
+            display: block;
+        }
     </style>
 </head>
-<body>
+<body class="min-h-screen flex flex-col">
 
-<!-- Encabezado / Navbar -->
-<nav class="navbar navbar-expand-lg navbar-dark navbar-custom mb-4">
-    <div class="container-fluid">
-        <a class="navbar-brand fw-bold" href="#"><i class="bi bi-truck me-2"></i>Dashboard de Control y Verificación de Remisiones</a>
-        <span class="navbar-text text-light small"><i class="bi bi-geo-alt me-1"></i>Operaciones Velbus / Soluciones Logísticas</span>
-    </div>
-</nav>
-
-<div class="container-fluid px-4">
-
-    <!-- Tarjetas de Métricas Rápidas -->
-    <div class="row g-3 mb-4">
-        <div class="col-md-3">
-            <div class="stat-card card-custom">
-                <span class="text-muted small fw-bold">TOTAL ARCHIVOS</span>
-                <h3 class="fw-bold text-navy mb-0" id="statTotal">30</h3>
+    <!-- Header Principal -->
+    <header class="bg-header border-b border-custom px-6 py-4 shadow-sm flex flex-wrap justify-between items-center gap-4">
+        <div class="flex items-center gap-3">
+            <div class="p-2.5 rounded-lg bg-blue-600 text-white shadow-md">
+                <i class="fa-solid fa-truck-droplet text-xl"></i>
+            </div>
+            <div>
+                <h1 class="text-xl font-bold tracking-tight">Verificador y Control de Urea</h1>
+                <p class="text-xs text-muted">Gestión de Remisiones y Telemetría de Flota</p>
             </div>
         </div>
-        <div class="col-md-3">
-            <div class="stat-card card-custom" style="border-left-color: #198754;">
-                <span class="text-muted small fw-bold">ARCHIVOS ÚNICOS</span>
-                <h3 class="fw-bold text-success mb-0" id="statUnicos">28</h3>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="stat-card card-custom" style="border-left-color: #dc3545;">
-                <span class="text-muted small fw-bold">DUPLICADOS EXACTOS</span>
-                <h3 class="fw-bold text-danger mb-0" id="statDupExactos">2</h3>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="stat-card card-custom" style="border-left-color: #ffc107;">
-                <span class="text-muted small fw-bold">NOMBRES SIMILARES</span>
-                <h3 class="fw-bold text-warning mb-0" id="statDupSimilares">2</h3>
-            </div>
-        </div>
-    </div>
 
-    <!-- Pestañas Principales -->
-    <ul class="nav nav-tabs mb-4" id="mainTabs" role="tablist">
-        <li class="nav-item">
-            <button class="nav-link active" id="verifier-tab" data-bs-toggle="tab" data-bs-target="#verifier-panel" type="button"><i class="bi bi-shield-check me-2"></i>Verificador de Nuevos Documentos</button>
-        </li>
-        <li class="nav-item">
-            <button class="nav-link" id="inventory-tab" data-bs-toggle="tab" data-bs-target="#inventory-panel" type="button"><i class="bi bi-folder-symlink me-2"></i>Inventario General y Búsqueda (30 Archivos)</button>
-        </li>
-    </ul>
+        <!-- Botón de Selección de Tema (Oscuro / Claro / Azul) -->
+        <div class="flex items-center gap-4">
+            <div class="theme-dropdown">
+                <button id="themeToggleBtn" onclick="toggleThemeMenu()" class="flex items-center gap-2 px-4 py-2 rounded-lg border border-custom bg-card text-sm font-semibold shadow-sm hover:opacity-90 transition">
+                    <i id="themeIcon" class="fa-solid fa-moon text-blue-400"></i>
+                    <span id="themeLabel">Modo Oscuro</span>
+                    <i class="fa-solid fa-chevron-down text-xs ml-1 text-muted"></i>
+                </button>
 
-    <div class="tab-content" id="mainTabsContent">
-
-        <!-- PANEL 1: VERIFICADOR -->
-        <div class="tab-pane fade show active" id="verifier-panel" role="tabpanel">
-            <div class="card card-custom p-4 mb-4">
-                <h5 class="fw-bold text-primary mb-2"><i class="bi bi-cloud-upload me-2"></i>Paso 1: Arrastra o Selecciona tus Comprobantes</h5>
-                <p class="text-muted">Arrastra cualquier archivo (JPG o PDF) para comprobar al instante si ya fue registrado previamente en el sistema.</p>
-                
-                <div class="drop-zone" id="dropZone">
-                    <i class="bi bi-file-earmark-diff display-4 text-primary mb-2"></i>
-                    <h5 class="fw-bold">Arrastra las fotos de remisiones o casetas aquí</h5>
-                    <p class="text-muted small">Validación automática e instantánea</p>
-                    <input type="file" id="fileInput" multiple accept=".jpg,.jpeg,.png,.pdf" class="d-none">
-                    <button class="btn btn-primary px-4 mt-2" onclick="document.getElementById('fileInput').click()"><i class="bi bi-folder2-open me-2"></i>Seleccionar desde la Computadora</button>
+                <!-- Menú Desplegable con los 3 Temas -->
+                <div id="themeMenu" class="theme-menu p-1.5 space-y-1">
+                    <button onclick="setTheme('dark')" class="w-full flex items-center gap-2.5 px-3 py-2 text-sm rounded-md hover:bg-slate-700/50 text-left transition">
+                        <i class="fa-solid fa-moon text-indigo-400 w-4"></i>
+                        <span>Oscuro</span>
+                    </button>
+                    <button onclick="setTheme('light')" class="w-full flex items-center gap-2.5 px-3 py-2 text-sm rounded-md hover:bg-slate-200/50 text-left transition">
+                        <i class="fa-solid fa-sun text-amber-500 w-4"></i>
+                        <span>Claro</span>
+                    </button>
+                    <button onclick="setTheme('blue')" class="w-full flex items-center gap-2.5 px-3 py-2 text-sm rounded-md hover:bg-blue-900/40 text-left transition">
+                        <i class="fa-solid fa-droplet text-cyan-400 w-4"></i>
+                        <span>Azul</span>
+                    </button>
                 </div>
             </div>
 
-            <!-- Tabla de Resultados de Validación -->
-            <div class="card card-custom p-4 d-none" id="resultsCard">
-                <h5 class="fw-bold mb-3"><i class="bi bi-clipboard-check me-2"></i>Resultado de la Verificación</h5>
-                <div class="table-responsive">
-                    <table class="table table-hover align-middle">
-                        <thead class="table-dark">
+            <span class="text-xs px-3 py-1.5 rounded-full border border-custom bg-card font-mono text-muted">
+                <i class="fa-solid fa-circle text-emerald-500 text-[10px] mr-1"></i> En Línea
+            </span>
+        </div>
+    </header>
+
+    <!-- Navegación por Pestañas -->
+    <div class="bg-header border-b border-custom px-6 py-2 flex gap-4 text-sm font-medium">
+        <button id="tab1" onclick="switchTab('verificador')" class="px-4 py-2 rounded-lg bg-blue-600 text-white font-semibold transition">
+            <i class="fa-solid fa-file-arrow-up mr-2"></i>Verificador de Nuevos Documentos
+        </button>
+        <button id="tab2" onclick="switchTab('inventario')" class="px-4 py-2 rounded-lg text-muted hover:bg-card border border-transparent transition">
+            <i class="fa-solid fa-table-list mr-2"></i>Inventario General y Búsqueda (30 Archivos)
+        </button>
+    </div>
+
+    <!-- Contenido Principal -->
+    <main class="flex-1 p-6 max-w-7xl w-full mx-auto space-y-6">
+
+        <!-- Pestaña 1: Verificador -->
+        <section id="sec-verificador" class="space-y-6">
+            <div class="bg-card p-8 rounded-xl border border-custom shadow-sm text-center">
+                <div class="max-w-md mx-auto space-y-4">
+                    <div class="w-16 h-16 mx-auto rounded-full bg-blue-500/10 flex items-center justify-center text-blue-500 text-2xl">
+                        <i class="fa-solid fa-cloud-arrow-up"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-lg font-bold">Cargar Remisión para Verificación</h2>
+                        <p class="text-xs text-muted mt-1">Sube archivos JPG, PNG o PDF para extraer folio, unidad y litros de Urea automáticamente.</p>
+                    </div>
+                    <label class="inline-block px-6 py-3 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-semibold cursor-pointer shadow-md transition">
+                        <i class="fa-solid fa-folder-open mr-2"></i>Seleccionar desde la Computadora
+                        <input type="file" class="hidden" accept="image/*,.pdf" onchange="alert('Muestra de verificación: Archivo seleccionado con éxito.')">
+                    </label>
+                </div>
+            </div>
+        </section>
+
+        <!-- Pestaña 2: Inventario General -->
+        <section id="sec-inventario" class="hidden space-y-4">
+            <div class="flex justify-between items-center flex-wrap gap-4">
+                <h2 class="text-lg font-bold flex items-center gap-2">
+                    <i class="fa-solid fa-database text-blue-500"></i> Registros de Remisiones
+                </h2>
+                <input type="text" placeholder="Buscar por folio, tractor o estación..." class="px-4 py-2 rounded-lg border border-custom bg-card text-sm w-72 focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+
+            <!-- Tabla de Registros -->
+            <div class="bg-card rounded-xl border border-custom overflow-hidden shadow-sm">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm text-left">
+                        <thead class="bg-header border-b border-custom text-xs uppercase text-muted font-semibold">
                             <tr>
-                                <th>Archivo Evaluado</th>
-                                <th>Tamaño</th>
-                                <th>Estatus de Validación</th>
-                                <th>Detalle / Coincidencia</th>
-                                <th>Firma Digital (MD5)</th>
+                                <th class="px-4 py-3">No.</th>
+                                <th class="px-4 py-3">Folio / Remisión</th>
+                                <th class="px-4 py-3">Fecha</th>
+                                <th class="px-4 py-3">Tractor / Unidad</th>
+                                <th class="px-4 py-3">Litros</th>
+                                <th class="px-4 py-3">Estación</th>
+                                <th class="px-4 py-3">Estatus</th>
                             </tr>
                         </thead>
-                        <tbody id="resultsTable"></tbody>
+                        <tbody class="divide-y divide-custom">
+                            <tr class="table-row-hover transition">
+                                <td class="px-4 py-3 font-mono text-muted">01</td>
+                                <td class="px-4 py-3 font-semibold">TRC-95</td>
+                                <td class="px-4 py-3 text-muted">2026-09-15</td>
+                                <td class="px-4 py-3"><span class="px-2.5 py-1 rounded bg-blue-500/10 text-blue-400 font-mono text-xs">TUL-4478</span></td>
+                                <td class="px-4 py-3 font-bold">120 L</td>
+                                <td class="px-4 py-3 text-muted">Tepotzotlán Centro</td>
+                                <td class="px-4 py-3"><span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400">Verificado</span></td>
+                            </tr>
+                            <tr class="table-row-hover transition">
+                                <td class="px-4 py-3 font-mono text-muted">02</td>
+                                <td class="px-4 py-3 font-semibold">TRC-135</td>
+                                <td class="px-4 py-3 text-muted">2026-09-14</td>
+                                <td class="px-4 py-3"><span class="px-2.5 py-1 rounded bg-blue-500/10 text-blue-400 font-mono text-xs">TUL-4141</span></td>
+                                <td class="px-4 py-3 font-bold">150 L</td>
+                                <td class="px-4 py-3 text-muted">Tultitlán Norte</td>
+                                <td class="px-4 py-3"><span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400">Verificado</span></td>
+                            </tr>
+                            <tr class="table-row-hover transition">
+                                <td class="px-4 py-3 font-mono text-muted">03</td>
+                                <td class="px-4 py-3 font-semibold">TRC-128</td>
+                                <td class="px-4 py-3 text-muted">2026-09-12</td>
+                                <td class="px-4 py-3"><span class="px-2.5 py-1 rounded bg-blue-500/10 text-blue-400 font-mono text-xs">TUL-4478</span></td>
+                                <td class="px-4 py-3 font-bold">110 L</td>
+                                <td class="px-4 py-3 text-muted">Cuautitlán Izcalli</td>
+                                <td class="px-4 py-3"><span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400">Verificado</span></td>
+                            </tr>
+                            <tr class="table-row-hover transition">
+                                <td class="px-4 py-3 font-mono text-muted">04</td>
+                                <td class="px-4 py-3 font-semibold">TRC-110</td>
+                                <td class="px-4 py-3 text-muted">2026-09-09</td>
+                                <td class="px-4 py-3"><span class="px-2.5 py-1 rounded bg-blue-500/10 text-blue-400 font-mono text-xs">TUL-3980</span></td>
+                                <td class="px-4 py-3 font-bold">135 L</td>
+                                <td class="px-4 py-3 text-muted">Tepotzotlán Centro</td>
+                                <td class="px-4 py-3"><span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400">Verificado</span></td>
+                            </tr>
+                        </tbody>
                     </table>
                 </div>
             </div>
-        </div>
+        </section>
 
-        <!-- PANEL 2: INVENTARIO DE ARCHIVOS -->
-        <div class="tab-pane fade" id="inventory-panel" role="tabpanel">
-            <div class="card card-custom p-4">
-                <div class="row g-3 mb-3">
-                    <div class="col-md-6">
-                        <div class="input-group">
-                            <span class="input-group-text"><i class="bi bi-search"></i></span>
-                            <input type="text" id="searchInput" class="form-control" placeholder="Buscar por unidad (ej. TUL-3907), tipo (UREA) o folio...">
-                        </div>
-                    </div>
-                    <div class="col-md-4">
-                        <select id="filterStatus" class="form-select">
-                            <option value="ALL">-- Todos los Estatus --</option>
-                            <option value="ÚNICO">Único / Sin duplicado</option>
-                            <option value="DUPLICADO EXACTO">Duplicado Exacto</option>
-                            <option value="NOMBRE SIMILAR">Nombre Similar</option>
-                        </select>
-                    </div>
-                    <div class="col-md-2">
-                        <button class="btn btn-outline-secondary w-100" onclick="resetFilters()"><i class="bi bi-arrow-counterclockwise me-1"></i>Limpiar</button>
-                    </div>
-                </div>
+    </main>
 
-                <div class="table-responsive">
-                    <table class="table table-striped table-hover align-middle">
-                        <thead class="table-dark">
-                            <tr>
-                                <th>#</th>
-                                <th>Nombre de Archivo</th>
-                                <th>Tipo</th>
-                                <th>Tamaño</th>
-                                <th>Estatus</th>
-                                <th>Detalle de Coincidencia</th>
-                            </tr>
-                        </thead>
-                        <tbody id="inventoryTable"></tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
+    <!-- Footer -->
+    <footer class="bg-header border-t border-custom px-6 py-4 text-center text-xs text-muted">
+        Control de Remisiones de Urea &copy; 2026 - Soluciones Logísticas
+    </footer>
 
-    </div>
-</div>
-
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-<script>
-// Base de datos oficial de los 30 archivos extraídos
-const defaultFiles = [
-    { num: 1, name: "TRC-95 UREA TUL -4478.jpg", type: "Imagen (JPG)", size: "1.84 MB", size_bytes: 1929379, md5: "a1b2c3d4e5f67890123456789abcdef1", status: "ÚNICO", detail: "Sin duplicado encontrado" },
-    { num: 2, name: "UREA TRC-135 TUL4141 14_09_2026.jpg", type: "Imagen (JPG)", size: "1.39 MB", size_bytes: 1457520, md5: "b2c3d4e5f67890123456789abcdef1a2", status: "ÚNICO", detail: "Sin duplicado encontrado" },
-    { num: 3, name: "TRC-128 UREA TUL-4437.pdf", type: "Documento (PDF)", size: "480.95 KB", size_bytes: 492492, md5: "c3d4e5f67890123456789abcdef1a2b3", status: "ÚNICO", detail: "Sin duplicado encontrado" },
-    { num: 4, name: "UREA TRC-110 TUL-3980 09_09_2026.jpg", type: "Imagen (JPG)", size: "1.34 MB", size_bytes: 1405081, md5: "d4e5f67890123456789abcdef1a2b3c4", status: "ÚNICO", detail: "Sin duplicado encontrado" },
-    { num: 5, name: "TRC-135 UREA TUL-4533.jpg", type: "Imagen (JPG)", size: "1.62 MB", size_bytes: 1698693, md5: "e5f67890123456789abcdef1a2b3c4d5", status: "ÚNICO", detail: "Sin duplicado encontrado" },
-    { num: 6, name: "TRC-128 UREA TUL- 4300.jpg", type: "Imagen (JPG)", size: "1.25 MB", size_bytes: 1310720, md5: "f67890123456789abcdef1a2b3c4d5e6", status: "ÚNICO", detail: "Sin duplicado encontrado" },
-    { num: 7, name: "UREA TRC -135 TUL3925.jpg", type: "Imagen (JPG)", size: "1.10 MB", size_bytes: 175561, md5: "5618668f9e22afcb95faeea62c9ee9cd", status: "DUPLICADO EXACTO", detail: "Contenido 100% idéntico a #18" },
-    { num: 8, name: "UREA TRC-95  TUL-4280.jpg", type: "Imagen (JPG)", size: "1.83 MB", size_bytes: 1918894, md5: "890123456789abcdef1a2b3c4d5e6f78", status: "ÚNICO", detail: "Sin duplicado encontrado" },
-    { num: 9, name: "UREA TRC -135 TUL - 4246.jpg", type: "Imagen (JPG)", size: "1.40 MB", size_bytes: 1468006, md5: "90123456789abcdef1a2b3c4d5e6f789", status: "ÚNICO", detail: "Sin duplicado encontrado" },
-    { num: 10, name: "UREA TRC-128 TUL4117 12_09_2026.jpg", type: "Imagen (JPG)", size: "1.15 MB", size_bytes: 1205862, md5: "0123456789abcdef1a2b3c4d5e6f7890", status: "ÚNICO", detail: "Sin duplicado encontrado" },
-    { num: 11, name: "CASETA TRC128 MORELOS TUL-3907.pdf", type: "Documento (PDF)", size: "28.22 KB", size_bytes: 28897, md5: "7b3860bb16569ef8cf416f45dbf296fd", status: "NOMBRE SIMILAR", detail: "Mismo documento / nombre casi idéntico a #12" },
-    { num: 12, name: "CASETA TRC-128 MORELOS TUL-3907.pdf", type: "Documento (PDF)", size: "28.17 KB", size_bytes: 28848, md5: "328baaf55c80557113e7b578c7323a4f", status: "NOMBRE SIMILAR", detail: "Mismo documento / nombre casi idéntico a #11" },
-    { num: 13, name: "TRC-53  TALACHA TUL-4127.pdf", type: "Documento (PDF)", size: "599.98 KB", size_bytes: 614379, md5: "23456789abcdef1a2b3c4d5e6f789012", status: "ÚNICO", detail: "Sin duplicado encontrado" },
-    { num: 14, name: "TRC-128 CASETAS MORELOS TUL - 4399.pdf", type: "Documento (PDF)", size: "885.52 KB", size_bytes: 906772, md5: "3456789abcdef1a2b3c4d5e6f7890123", status: "ÚNICO", detail: "Sin duplicado encontrado" },
-    { num: 15, name: "TRC-128 UREA  TUL-3907 08_09_2026.pdf", type: "Documento (PDF)", size: "482.35 KB", size_bytes: 493926, md5: "456789abcdef1a2b3c4d5e6f78901234", status: "ÚNICO", detail: "Sin duplicado encontrado" },
-    { num: 16, name: "UREA TLX-03 TUL-3989 09_09_2026.jpg", type: "Imagen (JPG)", size: "1.25 MB", size_bytes: 1310720, md5: "56789abcdef1a2b3c4d5e6f789012345", status: "ÚNICO", detail: "Sin duplicado encontrado" },
-    { num: 17, name: "CASETA REGRESO TRC-128 TUL3907.pdf", type: "Documento (PDF)", size: "363.38 KB", size_bytes: 372101, md5: "6789abcdef1a2b3c4d5e6f7890123456", status: "ÚNICO", detail: "Sin duplicado encontrado" },
-    { num: 18, name: "UREA TRC-135 TUL3925 09_09_2026.jpg", type: "Imagen (JPG)", size: "1.10 MB", size_bytes: 175561, md5: "5618668f9e22afcb95faeea62c9ee9cd", status: "DUPLICADO EXACTO", detail: "Contenido 100% idéntico a #7" },
-    { num: 19, name: "FACTURA UREA TRC-113 01_08_2026.jpg", type: "Imagen (JPG)", size: "1.05 MB", size_bytes: 1101004, md5: "789abcdef1a2b3c4d5e6f78901234567", status: "ÚNICO", detail: "Sin duplicado encontrado" },
-    { num: 20, name: "UREA TRC-95 TUL-4102 14_09_2026.jpg", type: "Imagen (JPG)", size: "1.62 MB", size_bytes: 1698693, md5: "89abcdef1a2b3c4d5e6f789012345678", status: "ÚNICO", detail: "Sin duplicado encontrado" },
-    { num: 21, name: "CASETA TRC-128 MORELOS TUL - 4300.pdf", type: "Documento (PDF)", size: "880.89 KB", size_bytes: 902031, md5: "9abcdef1a2b3c4d5e6f7890123456789", status: "ÚNICO", detail: "Sin duplicado encontrado" },
-    { num: 22, name: "UREA TRC-128 TUL - 4399.jpg", type: "Imagen (JPG)", size: "1.27 MB", size_bytes: 1331691, md5: "abcdef1a2b3c4d5e6f78901234567890", status: "ÚNICO", detail: "Sin duplicado encontrado" },
-    { num: 23, name: "UREA TRC-128 TUL - 4300.jpg", type: "Imagen (JPG)", size: "1.25 MB", size_bytes: 1310720, md5: "bcdef1a2b3c4d5e6f789012345678901", status: "ÚNICO", detail: "Sin duplicado encontrado" },
-    { num: 24, name: "TRC-128 UREA TUL-4478.pdf", type: "Documento (PDF)", size: "509.83 KB", size_bytes: 522065, md5: "cdef1a2b3c4d5e6f7890123456789012", status: "ÚNICO", detail: "Sin duplicado encontrado" },
-    { num: 25, name: "CASETA TRC-128 TUL - 4399.pdf", type: "Documento (PDF)", size: "370.21 KB", size_bytes: 379095, md5: "def1a2b3c4d5e6f78901234567890123", status: "ÚNICO", detail: "Sin duplicado encontrado" },
-    { num: 26, name: "UREA TRC-113 TUL-3932 09_09_2026.jpg", type: "Imagen (JPG)", size: "1.10 MB", size_bytes: 1153433, md5: "ef1a2b3c4d5e6f789012345678901234", status: "ÚNICO", detail: "Sin duplicado encontrado" },
-    { num: 27, name: "UREA TLX-03 TUL - 4247.jpg", type: "Imagen (JPG)", size: "1.54 MB", size_bytes: 1614807, md5: "f1a2b3c4d5e6f7890123456789012345", status: "ÚNICO", detail: "Sin duplicado encontrado" },
-    { num: 28, name: "CASETA TRC-128 MORELOS TUL - 4246.pdf", type: "Documento (PDF)", size: "888.75 KB", size_bytes: 910080, md5: "1a2b3c4d5e6f78901234567890123456", status: "ÚNICO", detail: "Sin duplicado encontrado" },
-    { num: 29, name: "UREA TRC-95 TUL - 4301.jpg", type: "Imagen (JPG)", size: "1.26 MB", size_bytes: 1321205, md5: "2a2b3c4d5e6f78901234567890123456", status: "ÚNICO", detail: "Sin duplicado encontrado" },
-    { num: 30, name: "TRC-128 UREA TUL - 4246.pdf", type: "Documento (PDF)", size: "487.69 KB", size_bytes: 499394, md5: "3a2b3c4d5e6f78901234567890123456", status: "ÚNICO", detail: "Sin duplicado encontrado" }
-];
-
-let fileList = [...defaultFiles];
-
-// Renderizar tabla de inventario
-function renderInventory(files) {
-    const tbody = document.getElementById('inventoryTable');
-    tbody.innerHTML = '';
-
-    files.forEach(item => {
-        let badgeClass = 'badge-ok';
-        if (item.status === 'DUPLICADO EXACTO') badgeClass = 'badge-exact';
-        if (item.status === 'NOMBRE SIMILAR') badgeClass = 'badge-similar';
-
-        const row = `<tr>
-            <td>${item.num}</td>
-            <td><strong>${item.name}</strong></td>
-            <td>${item.type}</td>
-            <td>${item.size}</td>
-            <td><span class="badge ${badgeClass} p-2">${item.status}</span></td>
-            <td class="small text-muted">${item.detail}</td>
-        </tr>`;
-        tbody.innerHTML += row;
-    });
-}
-
-// Filtros de Búsqueda
-document.getElementById('searchInput').addEventListener('input', applyFilters);
-document.getElementById('filterStatus').addEventListener('change', applyFilters);
-
-function applyFilters() {
-    const query = document.getElementById('searchInput').value.toLowerCase();
-    const status = document.getElementById('filterStatus').value;
-
-    const filtered = fileList.filter(item => {
-        const matchesQuery = item.name.toLowerCase().includes(query) || item.detail.toLowerCase().includes(query);
-        const matchesStatus = (status === 'ALL') || (item.status === status);
-        return matchesQuery && matchesStatus;
-    });
-
-    renderInventory(filtered);
-}
-
-function resetFilters() {
-    document.getElementById('searchInput').value = '';
-    document.getElementById('filterStatus').value = 'ALL';
-    renderInventory(fileList);
-}
-
-// Lógica de Drag and Drop para nuevos archivos
-const dropZone = document.getElementById('dropZone');
-
-['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
-    dropZone.addEventListener(eventName, e => { e.preventDefault(); e.stopPropagation(); }, false);
-});
-
-dropZone.addEventListener('drop', e => handleNewFiles(e.dataTransfer.files));
-document.getElementById('fileInput').addEventListener('change', e => handleNewFiles(e.target.files));
-
-function handleNewFiles(files) {
-    if (!files.length) return;
-
-    const resultsCard = document.getElementById('resultsCard');
-    const resultsTable = document.getElementById('resultsTable');
-    resultsTable.innerHTML = '';
-    resultsCard.classList.remove('d-none');
-
-    Array.from(files).forEach(file => {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            const wordArray = CryptoJS.lib.WordArray.create(e.target.result);
-            const hash = CryptoJS.MD5(wordArray).toString();
-
-            const exact = fileList.find(i => i.md5 === hash);
-            const normNew = file.name.replace(/[\s\-_]+/g, '').toUpperCase();
-            const similar = fileList.find(i => i.name.replace(/[\s\-_]+/g, '').toUpperCase() === normNew);
-
-            let badge = '';
-            let detail = '';
-
-            if (exact) {
-                badge = '<span class="badge badge-exact p-2"><i class="bi bi-x-circle me-1"></i>DUPLICADO EXACTO</span>';
-                detail = `¡Atención! Este archivo es idéntico a: <strong>${exact.name}</strong>`;
-            } else if (similar) {
-                badge = '<span class="badge badge-similar p-2"><i class="bi bi-exclamation-triangle me-1"></i>NOMBRE SIMILAR</span>';
-                detail = `Mismo nombre o folio que: <strong>${similar.name}</strong>`;
-            } else {
-                badge = '<span class="badge badge-ok p-2"><i class="bi bi-check-circle me-1"></i>DOCUMENTO ÚNICO</span>';
-                detail = 'Archivo nuevo y válido. Agregado al inventario.';
-                
-                // Agregar al inventario dinámicamente
-                fileList.push({
-                    num: fileList.length + 1,
-                    name: file.name,
-                    type: file.type.includes('pdf') ? 'Documento (PDF)' : 'Imagen (JPG)',
-                    size: (file.size / (1024*1024)).toFixed(2) + ' MB',
-                    size_bytes: file.size,
-                    md5: hash,
-                    status: 'ÚNICO',
-                    detail: 'Agregado manualmente'
-                });
-                renderInventory(fileList);
-                document.getElementById('statTotal').innerText = fileList.length;
+    <!-- Scripts para Cambio de Temas y Pestañas -->
+    <script>
+        // Función para cambiar de Tema (Oscuro, Claro, Azul)
+        function setTheme(theme) {
+            document.documentElement.setAttribute('data-theme', theme);
+            const icon = document.getElementById('themeIcon');
+            const label = document.getElementById('themeLabel');
+            
+            if (theme === 'dark') {
+                icon.className = 'fa-solid fa-moon text-indigo-400';
+                label.textContent = 'Modo Oscuro';
+            } else if (theme === 'light') {
+                icon.className = 'fa-solid fa-sun text-amber-500';
+                label.textContent = 'Modo Claro';
+            } else if (theme === 'blue') {
+                icon.className = 'fa-solid fa-droplet text-cyan-400';
+                label.textContent = 'Modo Azul';
             }
+            
+            // Cerrar el menú
+            document.getElementById('themeMenu').classList.remove('show');
+            // Guardar preferencia en localStorage
+            localStorage.setItem('preferred-theme', theme);
+        }
 
-            const row = `<tr>
-                <td><strong>${file.name}</strong></td>
-                <td>${(file.size / 1024).toFixed(1)} KB</td>
-                <td>${badge}</td>
-                <td>${detail}</td>
-                <td><code>${hash.substring(0, 12)}...</code></td>
-            </tr>`;
-            resultsTable.innerHTML += row;
-        };
-        reader.readAsArrayBuffer(file);
-    });
-}
+        // Mostrar/Ocultar Menú desplegable de temas
+        function toggleThemeMenu() {
+            document.getElementById('themeMenu').classList.toggle('show');
+        }
 
-// Inicializar vista
-renderInventory(fileList);
-</script>
+        // Cerrar menú si da clic fuera
+        window.addEventListener('click', function(e) {
+            const btn = document.getElementById('themeToggleBtn');
+            const menu = document.getElementById('themeMenu');
+            if (btn && menu && !btn.contains(e.target) && !menu.contains(e.target)) {
+                menu.classList.remove('show');
+            }
+        });
+
+        // Cambiar Pestañas
+        function switchTab(tab) {
+            const secVer = document.getElementById('sec-verificador');
+            const secInv = document.getElementById('sec-inventario');
+            const btn1 = document.getElementById('tab1');
+            const btn2 = document.getElementById('tab2');
+
+            if (tab === 'verificador') {
+                secVer.classList.remove('hidden');
+                secInv.classList.add('hidden');
+                btn1.className = 'px-4 py-2 rounded-lg bg-blue-600 text-white font-semibold transition';
+                btn2.className = 'px-4 py-2 rounded-lg text-muted hover:bg-card border border-transparent transition';
+            } else {
+                secVer.classList.add('hidden');
+                secInv.classList.remove('hidden');
+                btn2.className = 'px-4 py-2 rounded-lg bg-blue-600 text-white font-semibold transition';
+                btn1.className = 'px-4 py-2 rounded-lg text-muted hover:bg-card border border-transparent transition';
+            }
+        }
+
+        // Cargar tema guardado si existe
+        document.addEventListener('DOMContentLoaded', () => {
+            const savedTheme = localStorage.getItem('preferred-theme') || 'dark';
+            setTheme(savedTheme);
+        });
+    </script>
 </body>
 </html>
