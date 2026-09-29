@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Validador Inteligente y Base de Datos - Velbus del Oriente</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        [data-theme="dark"] {
+            --bg-main: #0f172a;
+            --bg-card: #1e293b;
+            --bg-header: #1e293b;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --border-color: #334155;
+            --accent: #38bdf8;
+        }
+        body {
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+        }
+        .bg-card { background-color: var(--bg-card); }
+        .bg-header { background-color: var(--bg-header); }
+        .border-custom { border-color: var(--border-color); }
+        .text-muted { color: var(--text-muted); }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col p-6">
+    <header class="bg-header border border-custom p-6 rounded-xl shadow-lg mb-6 flex flex-col md:flex-row justify-between items-center gap-4">
+        <div>
+            <h1 class="text-2xl font-bold"><i class="fas fa-brain text-sky-400 mr-2"></i> Velbus del Oriente</h1>
+            <p class="text-muted text-sm mt-1">Verificador y Control de Documentos con Normalización Inteligente de Unidades.</p>
+        </div>
+        <!-- Pestañas de Navegación -->
+        <div class="flex bg-slate-800 p-1.5 rounded-xl border border-custom space-x-2">
+            <button onclick="cambiarPestana('cargar')" id="btnTabCargar" class="px-4 py-2 rounded-lg font-medium text-sm transition bg-sky-600 text-white shadow">
+                <i class="fas fa-cloud-arrow-up mr-1.5"></i> Cargar y Validar
+            </button>
+            <button onclick="cambiarPestana('baseDatos')" id="btnTabBaseDatos" class="px-4 py-2 rounded-lg font-medium text-sm transition text-muted hover:text-white">
+                <i class="fas fa-database mr-1.5"></i> Base de Datos Global (<span id="badgeTotal">0</span>)
+            </button>
+        </div>
+    </header>
+
+    <main class="space-y-6 flex-1 max-w-6xl mx-auto w-full">
+        
+        <!-- PESTAÑA 1: CARGAR Y VALIDAR -->
+        <div id="seccionCargar" class="space-y-6">
+            <section class="bg-card border border-custom p-8 rounded-xl shadow-lg text-center">
+                <div class="border-2 border-dashed border-custom rounded-xl p-8 hover:border-sky-500 transition cursor-pointer relative" onclick="document.getElementById('inputArchivos').click()">
+                    <i class="fas fa-file-shield text-4xl text-sky-400 mb-3"></i>
+                    <h3 class="text-lg font-semibold mb-1">Arrastra tus archivos aquí o haz clic para explorar</h3>
+                    <p class="text-muted text-sm mb-4">Soporta documentos PDF, Imágenes (JPG, PNG) y contenedores comprimidos .ZIP</p>
+                    <input type="file" id="inputArchivos" multiple accept=".pdf,image/*,.zip" class="hidden" onchange="procesarArchivos(event)">
+                    <button type="button" class="bg-sky-600 hover:bg-sky-500 text-white px-6 py-2 rounded-lg font-medium transition shadow">
+                        Seleccionar Archivos
+                    </button>
+                </div>
+            </section>
+
+            <!-- Alerta Dinámica -->
+            <div id="alertaInteligente" class="hidden p-4 rounded-xl border flex items-start space-x-3 transition-all duration-300">
+                <div id="iconoAlerta" class="text-xl mt-0.5"></div>
+                <div>
+                    <h4 id="tituloAlerta" class="font-bold text-base"></h4>
+                    <p id="descripcionAlerta" class="text-sm mt-0.5 text-muted"></p>
+                </div>
+            </div>
+
+            <!-- Resultados de la Carga Actual -->
+            <section class="bg-card border border-custom p-6 rounded-xl shadow">
+                <h2 class="text-lg font-semibold mb-4"><i class="fas fa-list-check text-sky-400 mr-2"></i> Resultados del Análisis Reciente</h2>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="border-b border-custom text-muted text-xs uppercase tracking-wider">
+                                <th class="p-3">Unidad Detectada</th>
+                                <th class="p-3">Nombre del Archivo</th>
+                                <th class="p-3">Tipo</th>
+                                <th class="p-3">Tamaño</th>
+                                <th class="p-3">Estado</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tablaResultadosRecientes">
+                            <tr class="border-b border-custom text-muted">
+                                <td colspan="5" class="p-3 text-center text-sm">No se han procesado archivos en esta sesión.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </div>
+
+        <!-- PESTAÑA 2: BASE DE DATOS GLOBAL -->
+        <div id="seccionBaseDatos" class="space-y-6 hidden">
+            <section class="bg-card border border-custom p-6 rounded-xl shadow">
+                <div class="flex flex-col md:flex-row justify-between items-center mb-4 gap-4">
+                    <div>
+                        <h2 class="text-lg font-semibold"><i class="fas fa-database text-sky-400 mr-2"></i> Repositorio General en Base de Datos</h2>
+                        <p class="text-muted text-sm">Historial completo de archivos validados y almacenados de manera única.</p>
+                    </div>
+                    <div class="flex items-center space-x-3">
+                        <input type="text" id="inputFiltro" onkeyup="filtrarBaseDatos()" placeholder="Buscar por unidad (ej. TRC123)..." class="bg-slate-800 border border-custom rounded-lg px-3 py-1.5 text-sm text-white focus:outline-none focus:border-sky-500">
+                        <button onclick="limpiarBaseDatos()" class="bg-rose-600/20 hover:bg-rose-600/30 text-rose-400 border border-rose-500/30 px-3 py-1.5 rounded-lg text-sm transition">
+                            <i class="fas fa-trash-can mr-1"></i> Limpiar Historial
+                        </button>
+                    </div>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="border-b border-custom text-muted text-xs uppercase tracking-wider">
+                                <th class="p-3">Unidad Formateada</th>
+                                <th class="p-3">Nombre del Archivo</th>
+                                <th class="p-3">Tipo</th>
+                                <th class="p-3">Tamaño</th>
+                                <th class="p-3">Fecha y Hora de Carga</th>
+                                <th class="p-3">Firma Digital (Hash)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tablaBaseDatosGlobal">
+                            <tr class="border-b border-custom text-muted">
+                                <td colspan="6" class="p-3 text-center text-sm">La base de datos está vacía actualmente.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </div>
+
+    </main>
+
+    <script>
+        // Cargar base de datos guardada en el navegador (LocalStorage) o iniciar vacía
+        let baseDatosGlobal = JSON.parse(localStorage.getItem('velbus_db_archivos')) || [];
+        actualizarContadorGlobal();
+
+        function cambiarPestana(pestana) {
+            const btnCargar = document.getElementById('btnTabCargar');
+            const btnBD = document.getElementById('btnTabBaseDatos');
+            const secCargar = document.getElementById('seccionCargar');
+            const secBD = document.getElementById('seccionBaseDatos');
+
+            if (pestana === 'cargar') {
+                btnCargar.className = "px-4 py-2 rounded-lg font-medium text-sm transition bg-sky-600 text-white shadow";
+                btnBD.className = "px-4 py-2 rounded-lg font-medium text-sm transition text-muted hover:text-white";
+                secCargar.classList.remove('hidden');
+                secBD.classList.add('hidden');
+            } else {
+                btnBD.className = "px-4 py-2 rounded-lg font-medium text-sm transition bg-sky-600 text-white shadow";
+                btnCargar.className = "px-4 py-2 rounded-lg font-medium text-sm transition text-muted hover:text-white";
+                secBD.classList.remove('hidden');
+                secCargar.classList.add('hidden');
+                renderizarBaseDatosGlobal();
+            }
+        }
+
+        // Función de Inteligencia para normalizar unidades (ej: TRC-123, TRC 123 -> TRC123)
+        function extraerYNormalizarUnidad(nombreArchivo) {
+            // Expresión regular flexible para capturar prefijos de unidades seguidos de espacios/guiones y números
+            const regex = /\b(TRC|ECO|UNI|AUT|VEH)\s*[-]?\s*(\d+)\b/i;
+            const coincidencia = nombreArchivo.match(regex);
+            
+            if (coincidencia) {
+                let prefijo = coincidencia[1].toUpperCase();
+                let numero = coincidencia[2];
+                return `${prefijo}${numero}`;
+            }
+            return "GENERAL / SIN UNIDAD";
+        }
+
+        async function calcularHashBinario(file) {
+            const buffer = await file.arrayBuffer();
+            const hashBuffer = await crypto.subtle.digest('SHA-256', buffer);
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+        }
+
+        async function procesarArchivos(event) {
+            const files = event.target.files;
+            if (!files || files.length === 0) return;
+
+            let resultadosSesion = [];
+            let nuevosDuplicados = 0;
+            let totalProcesados = 0;
+
+            // Hashes existentes en la base de datos global para comparación rápida
+            const hashesExistentes = new Set(baseDatosGlobal.map(item => item.hash));
+
+            for (let file of files) {
+                totalProcesados++;
+                const hashUnico = await calcularHashBinario(file);
+                const unidadNormalizada = extraerYNormalizarUnidad(file.name);
+                const esDuplicado = hashesExistentes.has(hashUnico);
+
+                const fechaActual = new Date().toLocaleString('es-MX', {
+                    year: 'numeric', month: '2-digit', day: '2-digit',
+                    hour: '2-digit', minute: '2-digit', second: '2-digit'
+                });
+
+                let tipoArchivo = 'Desconocido';
+                if (file.name.endsWith('.pdf')) tipoArchivo = 'PDF';
+                else if (file.name.endsWith('.zip')) tipoArchivo = 'Archivo ZIP';
+                else tipoArchivo = 'Imagen';
+
+                const datosArchivo = {
+                    unidad: unidadNormalizada,
+                    nombre: file.name,
+                    tipo: tipoArchivo,
+                    tamanio: (file.size / 1024).toFixed(2) + ' KB',
+                    fecha: fechaActual,
+                    hash: hashUnico
+                };
+
+                if (!esDuplicado) {
+                    hashesExistentes.add(hashUnico);
+                    baseDatosGlobal.unshift(datosArchivo); // Guardar en la base global
+                    resultadosSesion.push({ ...datosArchivo, duplicado: false });
+                } else {
+                    nuevosDuplicados++;
+                    resultadosSesion.push({ ...datosArchivo, duplicado: true });
+                }
+            }
+
+            // Guardar cambios en LocalStorage (Simulando persistencia en Base de Datos)
+            localStorage.setItem('velbus_db_archivos', JSON.stringify(baseDatosGlobal));
+            actualizarContadorGlobal();
+            renderizarResultadosSesion(nuevosDuplicados, totalProcesados, resultadosSesion);
+            
+            // Limpiar input para permitir re-selección
+            event.target.value = '';
+        }
+
+        function actualizarContadorGlobal() {
+            document.getElementById('badgeTotal').innerText = baseDatosGlobal.length;
+        }
+
+        function renderizarResultadosSesion(duplicados, total, resultados) {
+            const alerta = document.getElementById('alertaInteligente');
+            const icono = document.getElementById('iconoAlerta');
+            const titulo = document.getElementById('tituloAlerta');
+            const desc = document.getElementById('descripcionAlerta');
+            const tbody = document.getElementById('tablaResultadosRecientes');
+
+            alerta.classList.remove('hidden');
+            if (duplicados > 0) {
+                alerta.className = "p-4 rounded-xl border bg-rose-500/10 border-rose-500/50 text-rose-200 flex items-start space-x-3";
+                icono.innerHTML = '<i class="fas fa-triangle-exclamation text-rose-400"></i>';
+                titulo.innerText = `¡Alerta IA: Duplicidad Detectada!`;
+                desc.innerText = `Se encontraron ${duplicados} archivo(s) repetido(s) que ya existían previamente en la base de datos.`;
+            } else {
+                alerta.className = "p-4 rounded-xl border bg-emerald-500/10 border-emerald-500/50 text-emerald-200 flex items-start space-x-3";
+                icono.innerHTML = '<i class="fas fa-shield-check text-emerald-400"></i>';
+                titulo.innerText = `Validación Exitosa`;
+                desc.innerText = `Se procesaron y registraron ${total} archivo(s) nuevos exitosamente en el sistema.`;
+            }
+
+            tbody.innerHTML = '';
+            resultados.forEach(item => {
+                const tr = document.createElement('tr');
+                tr.className = 'border-b border-custom hover:bg-slate-800/50 transition';
+                tr.innerHTML = `
+                    <td class="p-3 font-bold text-sky-400">${item.unidad}</td>
+                    <td class="p-3 font-medium">${item.nombre}</td>
+                    <td class="p-3 text-muted text-sm">${item.tipo}</td>
+                    <td class="p-3 text-muted text-sm">${item.tamanio}</td>
+                    <td class="p-3">
+                        ${item.duplicado 
+                            ? '<span class="px-2.5 py-1 bg-rose-500/20 text-rose-400 rounded-full text-xs font-semibold"><i class="fas fa-ban mr-1"></i> Duplicado (Rechazado)</span>' 
+                            : '<span class="px-2.5 py-1 bg-emerald-500/20 text-emerald-400 rounded-full text-xs font-semibold"><i class="fas fa-check-circle mr-1"></i> Único (Guardado)</span>'}
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function renderizarBaseDatosGlobal(filtro = '') {
+            const tbody = document.getElementById('tablaBaseDatosGlobal');
+            tbody.innerHTML = '';
+
+            const filtrados = baseDatosGlobal.filter(item => 
+                item.unidad.toLowerCase().includes(filtro.toLowerCase()) || 
+                item.nombre.toLowerCase().includes(filtro.toLowerCase())
+            );
+
+            if (filtrados.length === 0) {
+                tbody.innerHTML = `<tr class="border-b border-custom text-muted"><td colspan="6" class="p-4 text-center text-sm">No se encontraron registros en la base de datos.</td></tr>`;
+                return;
+            }
+
+            filtrados.forEach(item => {
+                const tr = document.createElement('tr');
+                tr.className = 'border-b border-custom hover:bg-slate-800/50 transition text-sm';
+                tr.innerHTML = `
+                    <td class="p-3 font-bold text-sky-400">${item.unidad}</td>
+                    <td class="p-3 font-medium">${item.nombre}</td>
+                    <td class="p-3 text-muted">${item.tipo}</td>
+                    <td class="p-3 text-muted">${item.tamanio}</td>
+                    <td class="p-3 text-muted text-xs">${item.fecha}</td>
+                    <td class="p-3 font-mono text-xs text-muted">${item.hash.substring(0, 16)}...</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function filtrarBaseDatos() {
+            const texto = document.getElementById('inputFiltro').value;
+            renderizarBaseDatosGlobal(texto);
+        }
+
+        function limpiarBaseDatos() {
+            if (confirm('¿Estás seguro de vaciar todo el historial de la base de datos?')) {
+                baseDatosGlobal = [];
+                localStorage.removeItem('velbus_db_archivos');
+                actualizarContadorGlobal();
+                renderizarBaseDatosGlobal();
+            }
+        }
+    </script>
+</body>
+</html>
